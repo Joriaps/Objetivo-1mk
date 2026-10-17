@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Objetivo 1 Mk</title>
+  <meta name="description" content="Objetivos de ventas por oferta, con total en euros y celebraciones.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#14131a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Objetivo 1 Mk">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="aplicacion">
+    <header class="cabecera">
+      <h1 class="cabecera__titulo">Objetivo 1 Mk</h1>
+      <span id="total-cabecera" class="chip chip--total" aria-hidden="true" hidden></span>
+      <span id="aviso-guardado" class="chip chip--aviso" hidden></span>
+    </header>
+
+    <main id="vistas">
+      <section id="vista-contar" class="vista" tabindex="-1" aria-label="Contar"></section>
+      <section id="vista-progreso" class="vista" tabindex="-1" aria-label="Progreso" hidden></section>
+      <section id="vista-ajustes" class="vista" tabindex="-1" aria-label="Ajustes" hidden></section>
+    </main>
+
+    <nav class="pestanas" aria-label="Secciones">
+      <button type="button" class="pestana" data-vista="contar" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Contar</span>
+      </button>
+      <button type="button" class="pestana" data-vista="progreso">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>
+        <span>Progreso</span>
+      </button>
+      <button type="button" class="pestana" data-vista="ajustes">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Ajustes</span>
+      </button>
+    </nav>
+  </div>
+
+  <section id="incompatible" class="incompatible" hidden>
+    <h1>Tus datos son de una versión más nueva</h1>
+    <p>Esta copia de la app es más antigua que la que guardó tus datos. Para no estropearlos, no se muestra ni se cambia nada.</p>
+    <p>Cierra la app y vuelve a abrirla con conexión a internet para que se actualice. Tus datos siguen intactos.</p>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <canvas id="efectos" class="efectos" aria-hidden="true"></canvas>
+  <div id="cartel" class="cartel" aria-live="polite" hidden>
+    <div class="cartel__titulo"></div>
+    <div class="cartel__subtitulo"></div>
+  </div>
+
+  <dialog id="dialogo" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-texto">
+    <h2 id="dialogo-titulo"></h2>
+    <p id="dialogo-texto"></p>
+    <div class="dialogo__acciones">
+      <button type="button" id="dialogo-cancelar" class="boton boton--sec">Cancelar</button>
+      <button type="button" id="dialogo-aceptar" class="boton">Aceptar</button>
+    </div>
+  </dialog>
+
+  <noscript><p class="incompatible">Esta app necesita JavaScript.</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
