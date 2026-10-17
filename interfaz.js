@@ -235,6 +235,7 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
         // La insignia fija aparece cuando la MEDALLA llega a su sitio (no cuando acaba todo el espectáculo).
         alInsignia: revelarInsignia,
         alTerminar: revelarInsignia,
+        alFallar: avisarFalloAnimacion,
       });
     }
   }
@@ -268,16 +269,27 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     const b = botones[0];
     mostrarVista('contar');
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      reproductor.reproducir(hito.efecto, {
-        titulo: hito.titulo,
-        subtitulo: `${b.nombre}: vista previa`,
-        animar: animar(),
-        vibrar: estado.preferencias.vibracion && entorno.vibracion ? (ms) => navigator.vibrate(ms) : null,
-        exclusivo: Boolean(hito.exclusivo),
-        escena: construirEscena(b.id, hito.porcentaje),
-        opciones: hito.opciones,
-      });
+      try {
+        reproductor.reproducir(hito.efecto, {
+          titulo: hito.titulo,
+          subtitulo: `${b.nombre}: vista previa`,
+          animar: animar(),
+          vibrar: estado.preferencias.vibracion && entorno.vibracion ? (ms) => navigator.vibrate(ms) : null,
+          exclusivo: Boolean(hito.exclusivo),
+          escena: construirEscena(b.id, hito.porcentaje),
+          opciones: hito.opciones,
+          alFallar: avisarFalloAnimacion,
+        });
+      } catch (error) {
+        avisarFalloAnimacion(error);
+      }
     }));
+  }
+
+  /** Si una animación falla en algún navegador, se dice en pantalla (y no solo en la consola, que en el móvil no se ve). */
+  function avisarFalloAnimacion(error) {
+    console.error(error);
+    aviso_(`La animación ha fallado: ${error && error.message ? error.message : error}`);
   }
 
   /** Muestra u oculta la medalla fija de una tarjeta (no la muestra mientras su medalla animada aún vuela). */

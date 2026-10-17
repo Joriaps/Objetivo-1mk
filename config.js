@@ -1,4 +1,4 @@
-// config.js — LA PLANTILLA. Aquí se cambia lo que la app muestra, sin tocar nada más.
+﻿// config.js — LA PLANTILLA. Aquí se cambia lo que la app muestra, sin tocar nada más.
 //
 // Añadir un botón:      una línea más en BOTONES.
 //   id        letras, números, guiones (máx. 32). NO lo cambies después: los datos guardados se unen por id.
@@ -11,7 +11,7 @@
 
 export const APP = {
   nombre: 'Objetivo 1 Mk',
-  version: '1.2.0',
+  version: '1.2.1',
   // Se escribe detrás de la puntuación total. Déjalo en '' si prefieres puntos sin unidad.
   unidad: '€',
   // Ajustes → «Ver las animaciones»: reproduce cada celebración sobre la primera tarjeta, sin cambiar datos.

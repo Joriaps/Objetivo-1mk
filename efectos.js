@@ -36,6 +36,8 @@ const mezcla = (a, b, u) => a + (b - a) * u;
 const suave = (u) => { const v = limitar(u); return v * v * (3 - 2 * v); };
 /** Cantidad de partículas según la calidad de la escena (nunca menos de 1). */
 const cant = (n, escena) => Math.max(1, Math.round(n * (escena.calidad ?? 1)));
+/** Opacidad para un `rgba(...)` en texto: 0…1 con 3 decimales, nunca en notación científica (1e-7), que Safari rechaza. */
+const op = (x) => (Math.round(limitar(x) * 1000) / 1000).toFixed(3);
 
 /** Rebote al aparecer: sube pasándose un poco de 1 y se asienta. `x` va de 0 a 1; a partir de 1 vale 1. */
 export function popIn(x) {
@@ -171,7 +173,7 @@ function dibujarMedalla(ctx, x, y, R, sx, metal, porcentaje, { cintas = true, br
 
   if (halo > 0) {
     const g = ctx.createRadialGradient(0, 0, R * 0.6, 0, 0, R * 2.1);
-    g.addColorStop(0, `rgba(255,226,122,${0.5 * halo})`);
+    g.addColorStop(0, `rgba(255,226,122,${op(0.5 * halo)})`);
     g.addColorStop(1, 'rgba(255,226,122,0)');
     ctx.globalAlpha = 1;
     ctx.fillStyle = g;
@@ -256,7 +258,7 @@ function crearMedalla(escena, { metal = 'oro' } = {}) {
     if (s0 > 0 && s0 < 0.32) {
       const k = s0 / 0.32;
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 120 + 120 * k);
-      g.addColorStop(0, `rgba(255,244,200,${0.6 * (1 - k)})`);
+      g.addColorStop(0, `rgba(255,244,200,${op(0.6 * (1 - k))})`);
       g.addColorStop(1, 'rgba(255,244,200,0)');
       ctx.globalAlpha = 1;
       ctx.fillStyle = g;
@@ -661,7 +663,7 @@ function crearCometa(escena) {
     if (t < T0) {
       const k = t / T0;
       const g = ctx.createRadialGradient(p0.x, p0.y, 0, p0.x, p0.y, 34);
-      g.addColorStop(0, `rgba(255,244,200,${0.8 * k})`);
+      g.addColorStop(0, `rgba(255,244,200,${op(0.8 * k)})`);
       g.addColorStop(1, 'rgba(255,209,102,0)');
       ctx.globalAlpha = 1;
       ctx.fillStyle = g;
@@ -880,7 +882,10 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
     ultimoCuadro = ahora;
     ctx.clearRect(0, 0, ancho, alto);
     activos = activos.filter((a) => {
-      const t = (ahora - a.inicio) / 1000;
+      // El reloj de arranque es el del PROPIO fotograma, no performance.now(): en Safari de iOS ambos relojes pueden
+      // no coincidir, y la animación acababa (o no empezaba) sin dibujarse.
+      if (a.inicio === null) a.inicio = ahora;
+      const t = Math.max(0, (ahora - a.inicio) / 1000);
       if (t >= a.def.duracion) { terminar(a); return false; }
       try {
         while (a.vibraciones.length && a.vibraciones[0].t <= t) {
@@ -902,6 +907,7 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
         }
       } catch (error) {
         console.error('Error dibujando la animación', error);
+        if (a.alFallar) { try { a.alFallar(error); } catch (e) { console.error(e); } }
         terminar(a);
         return false;
       }
@@ -922,7 +928,7 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
    *                   escena ({ origen, insignia, total, color, unidad, porcentaje }), opciones (del hito),
    *                   alInsignia (cuando la medalla llega a su sitio), alTerminar (cuando acaba todo) }
    */
-  function reproducir(nombre, { titulo, subtitulo, animar = true, vibrar = null, exclusivo = false, escena = {}, opciones = {}, alInsignia = null, alTerminar = null } = {}) {
+  function reproducir(nombre, { titulo, subtitulo, animar = true, vibrar = null, exclusivo = false, escena = {}, opciones = {}, alInsignia = null, alTerminar = null, alFallar = null } = {}) {
     const def = efectos[nombre];
     if (!def) { if (alInsignia) alInsignia(); if (alTerminar) alTerminar(); return; }
     clearTimeout(temporizadorCartel);
@@ -955,6 +961,7 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
     } catch (error) {
       // Un navegador raro no debe dejar el cartel colgado ni la insignia sin aparecer: se queda el mensaje quieto.
       console.error('No se pudo crear la animación', error);
+      if (alFallar) { try { alFallar(error); } catch (e) { console.error(e); } }
       for (const f of [alInsignia, alTerminar]) if (f) f();
       temporizadorCartel = setTimeout(ocultarCartel, 2800);
       return;
@@ -962,12 +969,13 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
     activos.push({
       def,
       dibujar,
-      inicio: performance.now(),
+      inicio: null,        // se fija con la marca de tiempo del primer fotograma
       vibraciones: [...def.vibraciones].sort((a, b) => a.t - b.t),
       vibrar,
       cartel: Boolean(titulo),
       alInsignia,
       alTerminar,
+      alFallar,
     });
     if (!marco) marco = requestAnimationFrame(cuadro);
   }
