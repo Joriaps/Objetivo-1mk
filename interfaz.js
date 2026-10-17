@@ -40,6 +40,7 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
   let mostrado = 0;                                       // número del total tal como se ve ahora mismo
   let animacionNumero = 0;
   let temporizadorAviso = 0;
+  const fichas = new Map();                               // id -> nº de la última celebración con medalla de esa tarjeta
   const pendientes = new Set();                           // tarjetas cuya medalla aún está volando: su insignia aparece al llegar
 
   // Los totales llevan la unidad de config.js (p. ej. «€»); si no hay unidad, son puntos sin más.
@@ -161,7 +162,7 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
   const listaTarjetas = h('div', { class: 'lista' }, botones.map(crearTarjeta));
 
   const ayudaIOS = h('div', { class: 'ayuda', role: 'note' },
-    h('p', {}, 'Para instalarla en el iPhone: abre esta página en Safari, pulsa Compartir (el cuadrado con la flecha) y elige «Añadir a pantalla de inicio».'),
+    h('p', {}, 'Para instalarla en el iPhone: abre esta página en Safari, pulsa Compartir (el cuadrado con la flecha) y elige «Añadir a pantalla de inicio». Después úsala siempre desde su icono: los datos de Safari y los del icono no se comparten.'),
     h('button', { class: 'boton boton--sec', type: 'button', onclick: () => { ayudaIOS.hidden = true; recordar('ayuda-ios', '1'); } }, 'Entendido'));
   ayudaIOS.hidden = !(entorno.esIOS && !entorno.instalada && recordado('ayuda-ios') !== '1');
 
@@ -216,6 +217,12 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
 
     aviso_(`${conSigno(r.aplicado)} en ${b.nombre}${r.recortado ? ' (no baja de 0)' : ''}. Total: ${conUnidad(totalFinal(botones, estado))}`);
 
+    const mia = (fichas.get(id) ?? 0) + 1;
+    fichas.set(id, mia);                                    // el aviso de una celebración ANTERIOR ya no destapa la insignia
+    const revelarInsignia = () => {
+      if (fichas.get(id) !== mia) return;
+      if (pendientes.delete(id)) pintarMedalla(id, medallaDe(cantidadDe(estado, id), objetivoDe(b, estado), hitos), true);
+    };
     if (hito) {
       reproductor.reproducir(hito.efecto, {
         titulo: hito.titulo,
@@ -225,9 +232,9 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
         exclusivo: Boolean(hito.exclusivo),
         escena: construirEscena(id, hito.porcentaje),
         opciones: hito.opciones,
-        alTerminar: () => {
-          if (pendientes.delete(id)) pintarMedalla(id, medallaDe(cantidadDe(estado, id), objetivoDe(b, estado), hitos), true);
-        },
+        // La insignia fija aparece cuando la MEDALLA llega a su sitio (no cuando acaba todo el espectáculo).
+        alInsignia: revelarInsignia,
+        alTerminar: revelarInsignia,
       });
     }
   }
@@ -271,22 +278,6 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     }
   }
 
-  /** Ver una celebración sin cambiar ningún dato: se reproduce sobre la primera tarjeta. */
-  function previsualizar(hito) {
-    const b = botones[0];
-    mostrarVista('contar');
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      reproductor.reproducir(hito.efecto, {
-        titulo: hito.titulo,
-        subtitulo: `${b.nombre}: vista previa`,
-        animar: animar(),
-        vibrar: estado.preferencias.vibracion && entorno.vibracion ? (ms) => navigator.vibrate(ms) : null,
-        exclusivo: Boolean(hito.exclusivo),
-        escena: construirEscena(b.id, hito.porcentaje),
-        opciones: hito.opciones,
-      });
-    }));
-  }
 
   // ───────────── Pantalla PROGRESO ─────────────
 
@@ -403,11 +394,6 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     caja.value = await archivo.text();
     aviso_('Archivo cargado. Pulsa «Importar» para aplicarlo.');
   });
-  const seccionAnimaciones = h('section', { class: 'seccion', 'aria-labelledby': 'aj-anim' },
-    h('h2', { id: 'aj-anim' }, 'Ver las animaciones'),
-    h('p', {}, 'Elige un porcentaje para ver esa celebración sobre la primera tarjeta. No cambia ningún dato.'),
-    h('div', { class: 'rejilla-hitos' }, hitos.map((x) => h('button', { class: 'boton boton--sec boton--chico', type: 'button', onclick: () => previsualizar(x) }, `${x.porcentaje} %`))));
-
   const seccionCopia = h('section', { class: 'seccion', 'aria-labelledby': 'aj-copia' },
     h('h2', { id: 'aj-copia' }, 'Copia de seguridad'),
     h('p', {}, 'Tus datos solo están en este dispositivo. Si borras los datos del navegador o desinstalas la app, se pierden. Guarda una copia de vez en cuando.'),
@@ -443,7 +429,7 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     entorno.esIOS && !entorno.instalada ? h('p', {}, 'En iPhone: Safari → Compartir → «Añadir a pantalla de inicio».') : null,
     botonInstalar);
 
-  $('vista-ajustes').append(seccionTotal, seccionObjetivos, seccionPrefs, seccionAnimaciones, seccionCopia, seccionDatos, seccionAcerca);
+  $('vista-ajustes').append(seccionTotal, seccionObjetivos, seccionPrefs, seccionCopia, seccionDatos, seccionAcerca);
 
   // ───────────── Refrescar valores ─────────────
 

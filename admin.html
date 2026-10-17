@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Admin · Objetivo 1 Mk</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#14131a">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="aplicacion">
+    <header class="cabecera">
+      <h1 class="cabecera__titulo">Vista previa de animaciones</h1>
+    </header>
+    <main id="admin" class="vista"></main>
+  </div>
+
+  <canvas id="efectos" class="efectos" aria-hidden="true"></canvas>
+  <div id="cartel" class="cartel" aria-live="polite" hidden>
+    <div class="cartel__titulo"></div>
+    <div class="cartel__subtitulo"></div>
+  </div>
+
+  <noscript><p class="incompatible">Esta página necesita JavaScript.</p></noscript>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

@@ -187,6 +187,8 @@ button { cursor: pointer; touch-action: manipulation; }
 
 .rejilla-hitos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .boton--chico { min-height: 44px; padding: 0 4px; }
+.rejilla-ofertas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.rejilla-ofertas .boton--chico { display: flex; align-items: center; gap: 6px; padding: 6px 10px; text-align: left; white-space: normal; }
 
 /* ── Tabla de progreso ── */
 /* overflow-x: auto = red de seguridad: si un nombre larguísimo no cupiera, la tabla se desliza en su caja en vez de cortarse. */
