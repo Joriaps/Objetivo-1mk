@@ -5,7 +5,7 @@
 
 import {
   MAX_CANTIDAD, MAX_SELECTOR, MAX_TOTAL, MAX_TEXTO_IMPORTADO,
-  acotar, aplicarCantidad, cantidadDe, colorTexto, fijarObjetivo, formatearNumero, fijarPreferencia, fijarTotal, hitoAlcanzado, interpretar,
+  acotar, animacionesActivas, aplicarCantidad, cantidadDe, colorTexto, fijarObjetivo, formatearNumero, fijarPreferencia, fijarTotal, hitoAlcanzado, interpretar,
   medallaDe, objetivoDe, progreso, progresoGlobal, quitarAjuste, reiniciarContadores, restablecerObjetivos, serializar,
   totalCalculado, totalFinal,
 } from './logica.js';
@@ -48,7 +48,7 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
   const conUnidad = (n) => (unidad ? `${numero(n)} ${unidad}` : numero(n));
   const conSignoUnidad = (n) => (unidad && n !== 0 ? `${conSigno(n)} ${unidad}` : conSigno(n));
 
-  const animar = () => estado.preferencias.animaciones && !entorno.reducirMovimiento();
+  const animar = () => animacionesActivas(estado.preferencias, entorno.reducirMovimiento());
   const vibrar = (ms) => { if (estado.preferencias.vibracion && entorno.vibracion) navigator.vibrate(ms); };
 
   // ───────────── Avisos y diálogo ─────────────
@@ -368,9 +368,9 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     h('div', { class: 'fila' }, h('button', { class: 'boton boton--sec', type: 'button', onclick: () => { commit(restablecerObjetivos(estado), { animarTotal: false }); aviso_('Objetivos restablecidos a los iniciales.'); } }, 'Restablecer objetivos')));
 
   const casillaVibracion = h('input', { type: 'checkbox', id: 'pref-vibracion', onchange: (e) => commit(fijarPreferencia(estado, 'vibracion', e.target.checked), { animarTotal: false }) });
-  const casillaAnimaciones = h('input', { type: 'checkbox', id: 'pref-animaciones', onchange: (e) => commit(fijarPreferencia(estado, 'animaciones', e.target.checked), { animarTotal: false }) });
+  const casillaAnimaciones = h('input', { type: 'checkbox', id: 'pref-animaciones', onchange: (e) => commit(fijarPreferencia(fijarPreferencia(estado, 'animaciones', e.target.checked), 'animacionesElegidas', true), { animarTotal: false }) });
   const notaVibracion = h('p', { class: 'nota', hidden: entorno.vibracion }, 'Este dispositivo o navegador no permite vibrar desde una web (por ejemplo, Safari en iPhone y iPad).');
-  const notaMovimiento = h('p', { class: 'nota', hidden: true }, 'Tu dispositivo pide menos movimiento, así que las animaciones grandes están desactivadas y solo verás el mensaje.');
+  const notaMovimiento = h('p', { class: 'nota', hidden: true }, 'Tu dispositivo tiene activado «Reducir movimiento» (en el iPhone: Ajustes → Accesibilidad → Movimiento), así que las animaciones están desactivadas y solo verás el mensaje. Marca la casilla de arriba para verlas igualmente.');
   casillaVibracion.disabled = !entorno.vibracion;
   const seccionPrefs = h('section', { class: 'seccion', 'aria-labelledby': 'aj-pref' },
     h('h2', { id: 'aj-pref' }, 'Preferencias'),
@@ -541,8 +541,8 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     totalEl.textContent = conUnidad(total);
     botonQuitarAjuste.disabled = estado.ajuste === 0;
     casillaVibracion.checked = estado.preferencias.vibracion && entorno.vibracion;
-    casillaAnimaciones.checked = estado.preferencias.animaciones;
-    notaMovimiento.hidden = !entorno.reducirMovimiento();
+    casillaAnimaciones.checked = animar();     // refleja lo que de verdad pasa, no solo la preferencia guardada
+    notaMovimiento.hidden = !(entorno.reducirMovimiento() && !estado.preferencias.animacionesElegidas);
   }
 
   // ───────────── Pestañas ─────────────

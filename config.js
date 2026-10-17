@@ -11,7 +11,7 @@
 
 export const APP = {
   nombre: 'Objetivo 1 Mk',
-  version: '1.1.0',
+  version: '1.2.0',
   // Se escribe detrás de la puntuación total. Déjalo en '' si prefieres puntos sin unidad.
   unidad: '€',
   // Ajustes → «Ver las animaciones»: reproduce cada celebración sobre la primera tarjeta, sin cambiar datos.

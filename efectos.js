@@ -949,9 +949,19 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
     if (exclusivo) { for (const a of activos) terminar(a); activos = []; }
     for (const a of activos) a.cartel = false;     // el cartel es del último efecto lanzado
     if (titulo) mostrarCartel(titulo, subtitulo, escena.origen, escena.color);
+    let dibujar;
+    try {
+      dibujar = def.crear({ ancho, alto, calidad, ...escena }, opciones);
+    } catch (error) {
+      // Un navegador raro no debe dejar el cartel colgado ni la insignia sin aparecer: se queda el mensaje quieto.
+      console.error('No se pudo crear la animación', error);
+      for (const f of [alInsignia, alTerminar]) if (f) f();
+      temporizadorCartel = setTimeout(ocultarCartel, 2800);
+      return;
+    }
     activos.push({
       def,
-      dibujar: def.crear({ ancho, alto, calidad, ...escena }, opciones),
+      dibujar,
       inicio: performance.now(),
       vibraciones: [...def.vibraciones].sort((a, b) => a.t - b.t),
       vibrar,

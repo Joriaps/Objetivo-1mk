@@ -98,7 +98,7 @@ export function estadoInicial() {
     cantidades: Object.create(null),
     objetivos: Object.create(null),
     ajuste: 0,
-    preferencias: { vibracion: true, animaciones: true },
+    preferencias: { vibracion: true, animaciones: true, animacionesElegidas: false },
   };
 }
 
@@ -151,8 +151,17 @@ export const restablecerObjetivos = (estado) => ({ ...estado, objetivos: Object.
 export const reiniciarContadores = (estado) => ({ ...estado, cantidades: Object.create(null), ajuste: 0 });
 
 export function fijarPreferencia(estado, clave, valor) {
-  if (clave !== 'vibracion' && clave !== 'animaciones') return estado;
+  if (clave !== 'vibracion' && clave !== 'animaciones' && clave !== 'animacionesElegidas') return estado;
   return { ...estado, preferencias: { ...estado.preferencias, [clave]: Boolean(valor) } };
+}
+
+/**
+ * ¿Se muestran las animaciones grandes? Si el sistema pide «reducir movimiento» (iPhone: Ajustes → Accesibilidad →
+ * Movimiento), se respeta SALVO que la persona haya marcado la casilla a propósito en la app (`animacionesElegidas`):
+ * lo que se elige a mano manda sobre el ajuste general. Sin ajuste del sistema, vale la casilla.
+ */
+export function animacionesActivas(preferencias, sistemaReduce) {
+  return Boolean(preferencias.animaciones && (!sistemaReduce || preferencias.animacionesElegidas));
 }
 
 // ───────────────────────── Progreso y celebraciones ─────────────────────────
@@ -284,6 +293,7 @@ export function interpretar(texto) {
   if (p && typeof p === 'object' && !Array.isArray(p)) {
     if (typeof p.vibracion === 'boolean') estado.preferencias.vibracion = p.vibracion;
     if (typeof p.animaciones === 'boolean') estado.preferencias.animaciones = p.animaciones;
+    if (typeof p.animacionesElegidas === 'boolean') estado.preferencias.animacionesElegidas = p.animacionesElegidas;
   }
   return { tipo: 'ok', estado, descartados: descartes.n };
 }
