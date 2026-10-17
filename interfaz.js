@@ -5,7 +5,7 @@
 
 import {
   MAX_CANTIDAD, MAX_SELECTOR, MAX_TOTAL, MAX_TEXTO_IMPORTADO,
-  acotar, animacionesActivas, aplicarCantidad, cantidadDe, colorTexto, fijarObjetivo, formatearNumero, fijarPreferencia, fijarTotal, hitoAlcanzado, interpretar,
+  acotar, animacionesActivas, aplicarCantidad, cantidadDe, colorTexto, elegirSuelta, fijarObjetivo, formatearNumero, fijarPreferencia, fijarTotal, hitoAlcanzado, interpretar,
   medallaDe, objetivoDe, progreso, progresoGlobal, quitarAjuste, reiniciarContadores, restablecerObjetivos, serializar,
   totalCalculado, totalFinal,
 } from './logica.js';
@@ -13,6 +13,7 @@ import { CLAVE } from './estado.js';
 
 const $ = (id) => document.getElementById(id);
 const numero = formatearNumero;
+const MAX_SUELTAS_A_LA_VEZ = 2;      // pulsando seguido no se apilan más: cuida la fluidez del móvil
 const conSigno = (n) => (n > 0 ? `+${numero(n)}` : n < 0 ? `−${numero(-n)}` : '0');
 const eslugan = (texto) => texto.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'copia';
 
@@ -30,7 +31,7 @@ function h(etiqueta, props = {}, ...hijos) {
   return el;
 }
 
-export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) {
+export function iniciar({ botones, hitos, sueltas = [], app, almacen, reproductor, entorno }) {
   let { estado, aviso, version, descartados } = almacen.cargar();
 
   if (almacen.soloLectura) { mostrarIncompatible(); return; }
@@ -40,7 +41,8 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
   let mostrado = 0;                                       // número del total tal como se ve ahora mismo
   let animacionNumero = 0;
   let temporizadorAviso = 0;
-  const fichas = new Map();                               // id -> nº de la última celebración con medalla de esa tarjeta
+  let ultimaSuelta = null;                                // para no repetir dos veces seguidas la misma animación al azar
+  const fichas = new Map();                             // id -> nº de la última celebración con medalla de esa tarjeta
   const pendientes = new Set();                           // tarjetas cuya medalla aún está volando: su insignia aparece al llegar
 
   // Los totales llevan la unidad de config.js (p. ej. «€»); si no hay unidad, son puntos sin más.
@@ -237,6 +239,17 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
         alTerminar: revelarInsignia,
         alFallar: avisarFalloAnimacion,
       });
+    } else if (r.aplicado > 0 && animar() && reproductor.activas < MAX_SUELTAS_A_LA_VEZ) {
+      // Sumar sin cruzar ninguna medalla: una animación al azar, distinta de la última y sin cartel.
+      const suelta = elegirSuelta(sueltas, ultimaSuelta);
+      if (suelta) {
+        ultimaSuelta = suelta;
+        reproductor.reproducir(suelta.efecto, {
+          escena: construirEscena(id, 0),
+          opciones: suelta.opciones,
+          alFallar: avisarFalloAnimacion,
+        });
+      }
     }
   }
 
@@ -425,8 +438,11 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
   });
   const seccionAnimaciones = h('section', { class: 'seccion', 'aria-labelledby': 'aj-anim' },
     h('h2', { id: 'aj-anim' }, 'Ver las animaciones'),
-    h('p', {}, 'Elige un porcentaje para ver esa celebración sobre la primera tarjeta. No cambia ningún dato.'),
-    h('div', { class: 'rejilla-hitos' }, hitos.map((x) => h('button', { class: 'boton boton--sec boton--chico', type: 'button', onclick: () => previsualizar(x) }, `${x.porcentaje} %`))));
+    h('p', {}, 'Elige una para verla sobre la primera tarjeta. No cambia ningún dato.'),
+    h('h3', {}, 'Medallas'),
+    h('div', { class: 'rejilla-hitos' }, hitos.map((x) => h('button', { class: 'boton boton--sec boton--chico', type: 'button', onclick: () => previsualizar(x) }, `${x.porcentaje} %`))),
+    h('h3', {}, 'Al sumar (sale una al azar)'),
+    h('div', { class: 'rejilla-hitos' }, sueltas.map((x) => h('button', { class: 'boton boton--sec boton--chico', type: 'button', onclick: () => previsualizar({ ...x, porcentaje: 0 }) }, x.nombre))));
 
   const seccionCopia = h('section', { class: 'seccion', 'aria-labelledby': 'aj-copia' },
     h('h2', { id: 'aj-copia' }, 'Copia de seguridad'),

@@ -227,6 +227,7 @@ tfoot th, tfoot td { background: var(--superficie-2); font-weight: 800; border-t
 /* ── Ajustes ── */
 .seccion { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; margin-bottom: 14px; }
 .seccion h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.seccion h3 { margin: 14px 0 8px; font-size: 0.95rem; opacity: 0.85; }
 .seccion p, .nota { margin: 0 0 10px; color: var(--texto-suave); font-size: 0.9rem; }
 .seccion dl { margin: 0 0 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
 .seccion dt { color: var(--texto-suave); }

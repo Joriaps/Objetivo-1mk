@@ -45,7 +45,7 @@ function copiar(origen) {
 // ───────────────────────── Configuración ─────────────────────────
 
 /** Devuelve la lista de errores de config.js (vacía si todo está bien). `efectos` = nombres de animaciones que existen. */
-export function validarConfig(botones, hitos, efectos = null) {
+export function validarConfig(botones, hitos, efectos = null, sueltas = null) {
   const errores = [];
   if (!Array.isArray(botones) || botones.length === 0) {
     errores.push('Hace falta al menos un botón en BOTONES.');
@@ -73,21 +73,45 @@ export function validarConfig(botones, hitos, efectos = null) {
       if (!entero(x.porcentaje) || x.porcentaje < 1 || x.porcentaje > 100) errores.push(`${donde}.porcentaje debe ser un entero de 1 a 100.`);
       else if (porcentajes.has(x.porcentaje)) errores.push(`${donde}.porcentaje repetido: ${x.porcentaje}`);
       else porcentajes.add(x.porcentaje);
-      if (typeof x.efecto !== 'string') errores.push(`${donde}.efecto debe ser un nombre de animación.`);
-      else if (efectos && !efectos.includes(x.efecto)) errores.push(`${donde}.efecto «${x.efecto}» no existe en efectos.js (hay: ${efectos.join(', ')}).`);
       if (typeof x.titulo !== 'string' || !x.titulo.trim()) errores.push(`${donde}.titulo debe ser un texto.`);
-      if (x.opciones !== undefined) {
-        if (!x.opciones || typeof x.opciones !== 'object' || Array.isArray(x.opciones)) {
-          errores.push(`${donde}.opciones debe ser un objeto, por ejemplo { metal: 'oro' } o { intensidad: 2 }.`);
-        } else {
-          if (x.opciones.metal !== undefined && !METALES.includes(x.opciones.metal)) errores.push(`${donde}.opciones.metal debe ser: ${METALES.join(', ')}.`);
-          if (x.opciones.intensidad !== undefined && !(entero(x.opciones.intensidad) && x.opciones.intensidad >= 1 && x.opciones.intensidad <= 3)) errores.push(`${donde}.opciones.intensidad debe ser 1, 2 o 3.`);
-        }
-      }
-      if (x.efecto === 'medalla' && !(x.opciones && METALES.includes(x.opciones.metal))) errores.push(`${donde}: la animación «medalla» necesita opciones: { metal: 'bronce' | 'plata' | 'oro' }.`);
+      revisarAnimacion(x, donde, efectos, errores);
     });
   }
+  if (sueltas !== null) {
+    if (!Array.isArray(sueltas)) {
+      errores.push('SUELTAS debe ser una lista.');
+    } else {
+      sueltas.forEach((x, i) => {
+        const donde = `SUELTAS[${i}]`;
+        if (!x || typeof x !== 'object') { errores.push(`${donde} no es un objeto.`); return; }
+        if (typeof x.nombre !== 'string' || !x.nombre.trim() || x.nombre.length > 20) errores.push(`${donde}.nombre debe ser un texto de 1 a 20 caracteres.`);
+        revisarAnimacion(x, donde, efectos, errores);
+      });
+    }
+  }
   return errores;
+}
+
+/** El efecto y las opciones de una celebración (hito o suelta): comprueba que existen y que son válidos. */
+function revisarAnimacion(x, donde, efectos, errores) {
+  if (typeof x.efecto !== 'string') errores.push(`${donde}.efecto debe ser un nombre de animación.`);
+  else if (efectos && !efectos.includes(x.efecto)) errores.push(`${donde}.efecto «${x.efecto}» no existe en efectos.js (hay: ${efectos.join(', ')}).`);
+  if (x.opciones !== undefined) {
+    if (!x.opciones || typeof x.opciones !== 'object' || Array.isArray(x.opciones)) {
+      errores.push(`${donde}.opciones debe ser un objeto, por ejemplo { metal: 'oro' } o { intensidad: 2 }.`);
+    } else {
+      if (x.opciones.metal !== undefined && !METALES.includes(x.opciones.metal)) errores.push(`${donde}.opciones.metal debe ser: ${METALES.join(', ')}.`);
+      if (x.opciones.intensidad !== undefined && !(entero(x.opciones.intensidad) && x.opciones.intensidad >= 1 && x.opciones.intensidad <= 3)) errores.push(`${donde}.opciones.intensidad debe ser 1, 2 o 3.`);
+    }
+  }
+  if (x.efecto === 'medalla' && !(x.opciones && METALES.includes(x.opciones.metal))) errores.push(`${donde}: la animación «medalla» necesita opciones: { metal: 'bronce' | 'plata' | 'oro' }.`);
+}
+
+/** Una animación suelta al azar, distinta de la anterior (si hay más de una). `azar` devuelve un número en [0, 1). */
+export function elegirSuelta(sueltas, anterior = null, azar = Math.random) {
+  if (!Array.isArray(sueltas) || sueltas.length === 0) return null;
+  const candidatas = sueltas.length > 1 ? sueltas.filter((s) => s !== anterior) : sueltas;
+  return candidatas[Math.min(candidatas.length - 1, Math.floor(azar() * candidatas.length))];
 }
 
 // ───────────────────────── Estado ─────────────────────────

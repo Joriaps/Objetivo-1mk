@@ -1,4 +1,4 @@
-﻿// config.js — LA PLANTILLA. Aquí se cambia lo que la app muestra, sin tocar nada más.
+// config.js — LA PLANTILLA. Aquí se cambia lo que la app muestra, sin tocar nada más.
 //
 // Añadir un botón:      una línea más en BOTONES.
 //   id        letras, números, guiones (máx. 32). NO lo cambies después: los datos guardados se unen por id.
@@ -11,12 +11,12 @@
 
 export const APP = {
   nombre: 'Objetivo 1 Mk',
-  version: '1.2.1',
+  version: '1.3.1',
   // Se escribe detrás de la puntuación total. Déjalo en '' si prefieres puntos sin unidad.
   unidad: '€',
   // Ajustes → «Ver las animaciones»: reproduce cada celebración sobre la primera tarjeta, sin cambiar datos.
   // Lo cambian solos PAQUETE-CON-PREVISUALIZACION.cmd y PAQUETE-SIN-PREVISUALIZACION.cmd; no hace falta tocarlo a mano.
-  vistaPrevia: true,
+  vistaPrevia: false,
 };
 
 // Precio por unidad (puntos) y número de ventas/socios que se quieren conseguir (objetivo).
@@ -37,15 +37,29 @@ export const BOTONES = [
 //              Los hitos con `metal` también dejan una medalla fija en la esquina de la tarjeta.
 //   exclusivo  true = cancela las demás animaciones en marcha (la final manda).
 // Si se cruzan varios hitos de una vez (por ejemplo, sumar 300 de golpe), solo se celebra el mayor.
+// Solo las tres medallas: el resto de sumas se celebra con una animación al azar (ver SUELTAS).
 export const HITOS = [
-  { porcentaje: 10,  efecto: 'destello', opciones: { intensidad: 1 }, titulo: '¡Arrancamos!' },
-  { porcentaje: 20,  efecto: 'monedasPocas', titulo: '¡Buen ritmo!' },
   { porcentaje: 30,  efecto: 'medalla',  opciones: { metal: 'bronce' }, titulo: '¡Medalla de bronce!' },
-  { porcentaje: 40,  efecto: 'cometa',   titulo: '¡Imparable!' },
-  { porcentaje: 50,  efecto: 'confeti',  titulo: '¡A la mitad!' },
   { porcentaje: 60,  efecto: 'medalla',  opciones: { metal: 'plata' }, titulo: '¡Medalla de plata!' },
-  { porcentaje: 70,  efecto: 'estrellas', titulo: '¡Ya casi!' },
-  { porcentaje: 80,  efecto: 'fuegos',   titulo: '¡Recta final!' },
-  { porcentaje: 90,  efecto: 'destello', opciones: { intensidad: 3 }, titulo: '¡Un último empujón!' },
   { porcentaje: 100, efecto: 'logro',    opciones: { metal: 'oro' }, titulo: '¡Objetivo conseguido!', exclusivo: true },
+];
+
+// Cada vez que SUMAS con un botón (y no se cruza una medalla) sale una de estas al azar, sin repetir la anterior.
+// Sin cartel de texto y como mucho dos a la vez, para que pulsar seguido no sature el móvil.
+//   nombre   cómo se llama en Ajustes → «Ver las animaciones»      efecto / opciones   igual que en HITOS
+// Añadir otra: una línea más. Quitar una: bórrala. (Los nombres de efecto disponibles están en efectos.js.)
+export const SUELTAS = [
+  { nombre: 'Destello',    efecto: 'destello', opciones: { intensidad: 1 } },
+  { nombre: 'Monedas',     efecto: 'monedasPocas' },
+  { nombre: 'Cometa',      efecto: 'cometa' },
+  { nombre: 'Estrellas',   efecto: 'estrellas' },
+  { nombre: 'Confeti',     efecto: 'confetiLigero' },
+  { nombre: 'Fuegos',      efecto: 'fuegosUno' },
+  { nombre: 'Fuegos grandes', efecto: 'fuegos' },
+  { nombre: 'Confeti grande', efecto: 'confeti' },
+  { nombre: 'Lluvia de monedas', efecto: 'monedas' },
+  { nombre: 'Globos',      efecto: 'globos' },
+  { nombre: 'Serpentinas', efecto: 'serpentinas' },
+  { nombre: 'Ondas',       efecto: 'ondas' },
+  { nombre: 'Rayos',       efecto: 'rayos' },
 ];

@@ -738,6 +738,154 @@ function crearEstrellas(escena) {
     ctx.globalAlpha = 1;
   };
 }
+
+// ───────────────────────────── Globos (suben desde la tarjeta) ─────────────────────────────
+
+function crearGlobos(escena) {
+  const { origen: o } = escena;
+  const n = cant(9, escena);
+  const globos = Array.from({ length: n }, (_, i) => {
+    const rx = azar(13, 18);
+    return {
+      x0: o.x + o.ancho * (0.08 + 0.84 * ((i + Math.random() * 0.6) / n)),     // repartidos a lo ancho de la tarjeta
+      y0: o.y + o.alto * 0.5,
+      rx, ry: rx * 1.25, vel: azar(150, 260), inicio: azar(0, 0.5), vida: azar(2.0, 2.5),
+      color: elegir(BRILLANTES), fase: Math.random() * DOS_PI,
+    };
+  });
+  return (ctx, t) => {
+    ctx.lineCap = 'round';
+    for (const g of globos) {
+      const s = t - g.inicio;
+      if (s < 0 || s >= g.vida) continue;
+      const k = s / g.vida;
+      const sc = popIn(s / 0.25);
+      const x = g.x0 + Math.sin(s * 2.2 + g.fase) * 14;
+      const y = g.y0 - g.vel * s;
+      const alfa = k < 0.75 ? 1 : limitar((1 - k) / 0.25);
+      const base = y + g.ry * sc;
+      ctx.globalAlpha = alfa * 0.6;
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x, base); ctx.quadraticCurveTo(x + Math.sin(s * 5 + g.fase) * 8, base + 16, x + Math.sin(s * 3 + g.fase) * 4, base + 34); ctx.stroke();
+      ctx.globalAlpha = alfa * 0.95;
+      ctx.fillStyle = g.color;
+      ctx.beginPath(); ctx.ellipse(x, y, g.rx * sc, g.ry * sc, 0, 0, DOS_PI); ctx.fill();
+      ctx.globalAlpha = alfa * 0.45;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.ellipse(x - g.rx * 0.35 * sc, y - g.ry * 0.4 * sc, g.rx * 0.2 * sc, g.ry * 0.28 * sc, -0.5, 0, DOS_PI); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  };
+}
+
+// ───────────────────────────── Serpentinas (cintas que salen de los lados de la tarjeta) ─────────────────────────────
+
+function crearSerpentinas(escena) {
+  const { origen: o } = escena;
+  const n = cant(14, escena);
+  const cintas = Array.from({ length: n }, (_, i) => {
+    const izquierda = i % 2 === 0;
+    return {
+      x0: izquierda ? o.x + 14 : o.x + o.ancho - 14, y0: o.y + o.alto * 0.45,
+      ang: grados((izquierda ? -60 : -120) + azar(-22, 22)), vel: azar(520, 860), inicio: azar(0, 0.25), vida: azar(1.7, 2.3),
+      color: elegir(BRILLANTES), fase: Math.random() * DOS_PI, onda: azar(7, 14),
+    };
+  });
+  const pos = (c, s) => {
+    const d = (1 - Math.exp(-2.4 * s)) / 2.4;
+    return { x: c.x0 + Math.cos(c.ang) * c.vel * d + Math.sin(s * 11 + c.fase) * c.onda * Math.min(1, s * 3), y: c.y0 + Math.sin(c.ang) * c.vel * d + 0.5 * 520 * s * s };
+  };
+  return (ctx, t) => {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const c of cintas) {
+      const s = t - c.inicio;
+      if (s < 0 || s >= c.vida) continue;
+      const k = s / c.vida;
+      ctx.globalAlpha = k < 0.7 ? 0.95 : limitar((1 - k) / 0.3) * 0.95;
+      ctx.strokeStyle = c.color;
+      ctx.lineWidth = 4.5 * (1 - 0.4 * k);
+      let p = pos(c, s);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+      for (let j = 1; j <= 12; j++) { p = pos(c, Math.max(0, s - j * 0.028)); ctx.lineTo(p.x, p.y); }   // la cola: dónde estuvo la cinta hace un momento
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  };
+}
+
+// ───────────────────────────── Ondas (anillos que se expanden desde la tarjeta) ─────────────────────────────
+
+function crearOndas(escena) {
+  const { origen: o, ancho, alto, color } = escena;
+  const cx = o.x + o.ancho / 2;
+  const cy = o.y + o.alto / 2;
+  const R = Math.max(240, Math.min(Math.max(ancho, alto) * 0.7, 620));
+  const anillos = cant(4, escena);
+  const puntos = cant(16, escena);
+  const giro = Math.random() * DOS_PI;
+  const VIDA = 1.3;
+  return (ctx, t) => {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < anillos; i++) {
+      const s = t - i * 0.22;
+      if (s < 0 || s >= VIDA) continue;
+      const k = s / VIDA;
+      const r = Math.max(1, R * (1 - Math.pow(1 - k, 3)));          // sale rápido y frena
+      ctx.globalAlpha = limitar((1 - k) * 0.9);
+      ctx.strokeStyle = i % 2 === 0 ? color : '#FFFFFF';
+      ctx.lineWidth = 2 + 7 * (1 - k);
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, DOS_PI); ctx.stroke();
+      if (i === 0) {
+        ctx.fillStyle = '#FFFFFF';
+        for (let j = 0; j < puntos; j++) {
+          const a = giro + (DOS_PI * j) / puntos;
+          chispa(ctx, cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1 + 5 * (1 - k), s * 4 + j);
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  };
+}
+
+// ───────────────────────────── Rayos (un sol que gira detrás de la tarjeta) ─────────────────────────────
+
+function crearRayos(escena) {
+  const { origen: o } = escena;
+  const cx = o.x + o.ancho / 2;
+  const cy = o.y + o.alto / 2;
+  const n = cant(14, escena);
+  const R = 520;
+  const giro = Math.random() * DOS_PI;
+  return (ctx, t) => {
+    const env = Math.sin(Math.PI * limitar(t / 1.8));                // sube y baja suave
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(cx, cy);
+    ctx.rotate(giro + t * 0.6);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+    g.addColorStop(0, `rgba(255,226,122,${op(0.7 * env)})`);
+    g.addColorStop(1, 'rgba(255,226,122,0)');
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = g;
+    const medio = (DOS_PI / n) * 0.28 * (0.6 + 0.4 * env);
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = (i * DOS_PI) / n;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a - medio) * R, Math.sin(a - medio) * R);
+      ctx.lineTo(Math.cos(a + medio) * R, Math.sin(a + medio) * R);
+      ctx.closePath();
+    }
+    ctx.fill();
+    const h = ctx.createRadialGradient(0, 0, 0, 0, 0, 90);
+    h.addColorStop(0, `rgba(255,255,255,${op(0.8 * env)})`);
+    h.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = h;
+    ctx.beginPath(); ctx.arc(0, 0, 90, 0, DOS_PI); ctx.fill();
+  };
+}
+
 // ───────────────────────────── Registro ─────────────────────────────
 
 export const EFECTOS = {
@@ -760,6 +908,17 @@ export const EFECTOS = {
   monedasPocas: { duracion: 2.3, vibraciones: [{ t: 0.8, ms: 10 }, { t: 1.3, ms: 10 }], crear: (escena, opciones) => crearMonedas(escena, { cantidad: 10, ...opciones }) },
   cometa: { duracion: 2.1, vibraciones: [{ t: 0.2, ms: 12 }, { t: 1.05, ms: 25 }], crear: crearCometa },
   estrellas: { duracion: 2.2, vibraciones: [{ t: 0, ms: 25 }, { t: 0.4, ms: 12 }], crear: crearEstrellas },
+  globos: { duracion: 3.1, vibraciones: [{ t: 0.1, ms: 12 }], crear: crearGlobos },
+  serpentinas: { duracion: 2.6, vibraciones: [{ t: 0, ms: 20 }], crear: crearSerpentinas },
+  ondas: { duracion: 2.0, vibraciones: [{ t: 0, ms: 15 }], crear: crearOndas },
+  rayos: { duracion: 1.8, vibraciones: [{ t: 0.3, ms: 15 }], crear: crearRayos },
+  // Versiones pequeñas para las que salen al azar en cada suma: tres cohetes y un puñado de confeti.
+  fuegosUno: {
+    duracion: 3.8,
+    vibraciones: [{ t: 0.8, ms: 15 }, { t: 1.3, ms: 15 }],
+    crear: (escena, opciones) => crearFuegos(escena, { cohetes: 3, extension: 0.6, ...opciones }),
+  },
+  confetiLigero: { duracion: DURACION_CONFETI, vibraciones: [{ t: 0, ms: 20 }], crear: (escena) => crearConfeti({ ...escena, calidad: (escena.calidad ?? 1) * 0.3 }) },
 };
 
 /** Junta varias animaciones en una: cada parte empieza tras su `desfase` (s) y usa sus `opciones`. */
@@ -953,7 +1112,7 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
     }
 
     if (exclusivo) { for (const a of activos) terminar(a); activos = []; }
-    for (const a of activos) a.cartel = false;     // el cartel es del último efecto lanzado
+    if (titulo) for (const a of activos) a.cartel = false;     // el cartel es del último efecto lanzado (uno sin cartel no lo roba)
     if (titulo) mostrarCartel(titulo, subtitulo, escena.origen, escena.color);
     let dibujar;
     try {
@@ -981,5 +1140,5 @@ export function crearReproductor({ canvas, cartel, efectos = EFECTOS }) {
   }
 
   window.addEventListener('resize', () => { if (!activos.length) ajustar(); });
-  return { reproducir, get calidad() { return calidad; } };
+  return { reproducir, get calidad() { return calidad; }, get activas() { return activos.length; } };
 }

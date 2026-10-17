@@ -1,6 +1,6 @@
 // app.js — Punto de entrada: comprueba la configuración, prepara el almacenamiento y arranca la interfaz.
 
-import { APP, BOTONES, HITOS } from './config.js';
+import { APP, BOTONES, HITOS, SUELTAS } from './config.js';
 import { validarConfig } from './logica.js';
 import { crearAlmacen } from './estado.js';
 import { EFECTOS, crearReproductor } from './efectos.js';
@@ -24,7 +24,7 @@ document.title = APP.nombre;
 const titulo = document.querySelector('.cabecera__titulo');
 if (titulo) titulo.textContent = APP.nombre;
 
-const errores = validarConfig(BOTONES, HITOS, Object.keys(EFECTOS));
+const errores = validarConfig(BOTONES, HITOS, Object.keys(EFECTOS), SUELTAS);
 if (errores.length > 0) {
   mostrarError(errores);
 } else {
@@ -49,6 +49,7 @@ if (errores.length > 0) {
   iniciar({
     botones: BOTONES,
     hitos: HITOS,
+    sueltas: SUELTAS,
     app: APP,
     almacen: crearAlmacen(almacenamiento),
     reproductor: crearReproductor({ canvas: document.getElementById('efectos'), cartel: document.getElementById('cartel') }),
