@@ -14,6 +14,9 @@ export const APP = {
   version: '1.1.0',
   // Se escribe detrás de la puntuación total. Déjalo en '' si prefieres puntos sin unidad.
   unidad: '€',
+  // Ajustes → «Ver las animaciones»: reproduce cada celebración sobre la primera tarjeta, sin cambiar datos.
+  // Lo cambian solos PAQUETE-CON-PREVISUALIZACION.cmd y PAQUETE-SIN-PREVISUALIZACION.cmd; no hace falta tocarlo a mano.
+  vistaPrevia: true,
 };
 
 // Precio por unidad (puntos) y número de ventas/socios que se quieren conseguir (objetivo).
@@ -29,19 +32,19 @@ export const BOTONES = [
 ];
 
 // Celebraciones: al cruzar este PORCENTAJE del objetivo de un botón. Todas salen de la TARJETA que lo ha conseguido.
-//   efecto     confeti | fuegos | destello | medalla | monedas | logro   (ver efectos.js)
+//   efecto     confeti | fuegos | destello | medalla | monedas | monedasPocas | cometa | estrellas | logro   (ver efectos.js)
 //   opciones   destello: { intensidad: 1..3 }    medalla: { metal: 'bronce' | 'plata' | 'oro' }
 //              Los hitos con `metal` también dejan una medalla fija en la esquina de la tarjeta.
 //   exclusivo  true = cancela las demás animaciones en marcha (la final manda).
 // Si se cruzan varios hitos de una vez (por ejemplo, sumar 300 de golpe), solo se celebra el mayor.
 export const HITOS = [
   { porcentaje: 10,  efecto: 'destello', opciones: { intensidad: 1 }, titulo: '¡Arrancamos!' },
-  { porcentaje: 20,  efecto: 'destello', opciones: { intensidad: 1 }, titulo: '¡Buen ritmo!' },
+  { porcentaje: 20,  efecto: 'monedasPocas', titulo: '¡Buen ritmo!' },
   { porcentaje: 30,  efecto: 'medalla',  opciones: { metal: 'bronce' }, titulo: '¡Medalla de bronce!' },
-  { porcentaje: 40,  efecto: 'destello', opciones: { intensidad: 2 }, titulo: '¡Imparable!' },
+  { porcentaje: 40,  efecto: 'cometa',   titulo: '¡Imparable!' },
   { porcentaje: 50,  efecto: 'confeti',  titulo: '¡A la mitad!' },
   { porcentaje: 60,  efecto: 'medalla',  opciones: { metal: 'plata' }, titulo: '¡Medalla de plata!' },
-  { porcentaje: 70,  efecto: 'destello', opciones: { intensidad: 2 }, titulo: '¡Ya casi!' },
+  { porcentaje: 70,  efecto: 'estrellas', titulo: '¡Ya casi!' },
   { porcentaje: 80,  efecto: 'fuegos',   titulo: '¡Recta final!' },
   { porcentaje: 90,  efecto: 'destello', opciones: { intensidad: 3 }, titulo: '¡Un último empujón!' },
   { porcentaje: 100, efecto: 'logro',    opciones: { metal: 'oro' }, titulo: '¡Objetivo conseguido!', exclusivo: true },

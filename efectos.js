@@ -336,12 +336,12 @@ function dibujarMoneda(ctx, x, y, r, t, fase, unidad) {
 }
 
 /** Lluvia de monedas que saltan de la tarjeta y vuelan al total, que «chispea» cada vez que llega una. */
-function crearMonedas(escena) {
+function crearMonedas(escena, { cantidad = 30 } = {}) {
   const { origen: o, total, unidad = '€' } = escena;
   const px = o.x + o.ancho / 2;
   const py = o.y + o.alto / 2;
   const G = 560;
-  const n = cant(30, escena);
+  const n = cant(cantidad, escena);
   const monedas = Array.from({ length: n }, (_, i) => {
     const ang = -Math.PI / 2 + (Math.random() - 0.5) * 2.4;
     const m = {
@@ -636,6 +636,106 @@ function crearFuegos(escena, { cohetes: pedidos = 18, extension = 3.4 } = {}) {
   };
 }
 
+// ───────────────────────────── Cometa (de la tarjeta al total) ─────────────────────────────
+
+/**
+ * Una bola de luz con cola cruza en curva de la tarjeta a la cifra del total y estalla en chispas sobre ella:
+ * se ve de dónde sale cada euro y adónde va.
+ */
+function crearCometa(escena) {
+  const { origen: o, total } = escena;
+  const p0 = { x: o.x + o.ancho / 2, y: o.y + o.alto * 0.3 };
+  const lado = Math.random() < 0.5 ? -1 : 1;
+  const c = { x: (p0.x + total.x) / 2 + lado * 130, y: Math.min(p0.y, total.y) - 50 };
+  const en = (u) => { const v = 1 - u; return { x: v * v * p0.x + 2 * v * u * c.x + u * u * total.x, y: v * v * p0.y + 2 * v * u * c.y + u * u * total.y }; };
+  const T0 = 0.2;                      // carga en la tarjeta
+  const VUELO_COMETA = 0.85;           // viaje
+  const llegada = T0 + VUELO_COMETA;
+  const nChispas = cant(16, escena);
+  const chispas = Array.from({ length: nChispas }, (_, i) => ({ ang: (DOS_PI * i) / nChispas + azar(-0.2, 0.2), vel: azar(70, 190), tam: azar(4, 9) }));
+
+  return (ctx, t) => {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    // Carga: un brillo que crece sobre la tarjeta antes de salir.
+    if (t < T0) {
+      const k = t / T0;
+      const g = ctx.createRadialGradient(p0.x, p0.y, 0, p0.x, p0.y, 34);
+      g.addColorStop(0, `rgba(255,244,200,${0.8 * k})`);
+      g.addColorStop(1, 'rgba(255,209,102,0)');
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p0.x, p0.y, 34, 0, DOS_PI); ctx.fill();
+    }
+    // Vuelo: cabeza brillante y cola de puntos que se apagan.
+    if (t >= T0 && t < llegada) {
+      const u = suave((t - T0) / VUELO_COMETA);
+      const cabeza = en(u);
+      for (let k = 18; k >= 1; k--) {
+        const p = en(suave(Math.max(0, (t - T0 - k * 0.018) / VUELO_COMETA)));
+        ctx.globalAlpha = 0.5 * (1 - k / 19);
+        ctx.fillStyle = k % 3 === 0 ? '#FFFFFF' : ORO;
+        ctx.beginPath(); ctx.arc(p.x + Math.sin(k * 5 + t * 20) * 2, p.y + Math.cos(k * 4 + t * 20) * 2, Math.max(1.5, 8 * (1 - k / 19)), 0, DOS_PI); ctx.fill();
+      }
+      const g = ctx.createRadialGradient(cabeza.x, cabeza.y, 0, cabeza.x, cabeza.y, 30);
+      g.addColorStop(0, 'rgba(255,255,255,0.95)');
+      g.addColorStop(0.35, 'rgba(255,209,102,0.7)');
+      g.addColorStop(1, 'rgba(255,209,102,0)');
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cabeza.x, cabeza.y, 30, 0, DOS_PI); ctx.fill();
+    }
+    // Llegada: fogonazo, anillo y chispas que salen de la cifra del total.
+    const s = t - llegada;
+    if (s > 0 && s < 0.9) {
+      const k = s / 0.9;
+      ctx.globalAlpha = (1 - k) * 0.9;
+      ctx.fillStyle = '#FFFFFF';
+      chispa(ctx, total.x, total.y, 26 + 20 * (1 - k), k * 4);
+      ctx.strokeStyle = ORO;
+      ctx.lineWidth = 1 + 4 * (1 - k);
+      ctx.beginPath(); ctx.arc(total.x, total.y, 12 + 60 * k, 0, DOS_PI); ctx.stroke();
+      ctx.fillStyle = ORO;
+      for (const b of chispas) chispa(ctx, total.x + Math.cos(b.ang) * b.vel * s, total.y + Math.sin(b.ang) * b.vel * s + 30 * s * s, b.tam * (1 - 0.6 * k), s * 7);
+    }
+    ctx.globalAlpha = 1;
+  };
+}
+
+// ───────────────────────────── Estrellas fugaces (abanico que sale de la tarjeta) ─────────────────────────────
+
+function crearEstrellas(escena) {
+  const { origen: o } = escena;
+  const ox = o.x + o.ancho / 2;
+  const oy = o.y + o.alto * 0.4;
+  const n = cant(11, escena);
+  const estrellas = Array.from({ length: n }, (_, i) => ({
+    ang: grados(-90 + ((i / Math.max(1, n - 1)) - 0.5) * 140 + azar(-8, 8)),   // abanico hacia arriba, no un círculo
+    vel: azar(560, 980), inicio: azar(0, 0.45), vida: azar(0.95, 1.4), tam: azar(8, 14),
+    color: Math.random() < 0.4 ? '#FFFFFF' : elegir([ORO, '#FFF0A6', '#4CC9F0']), fase: Math.random() * DOS_PI,
+  }));
+  const pos = (e, s) => { const d = (1 - Math.exp(-2.1 * s)) / 2.1; return { x: ox + Math.cos(e.ang) * e.vel * d, y: oy + Math.sin(e.ang) * e.vel * d + 0.5 * 90 * s * s }; };
+  return (ctx, t) => {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (const e of estrellas) {
+      const s = t - e.inicio;
+      if (s < 0 || s >= e.vida) continue;
+      const k = s / e.vida;
+      const a = pos(e, Math.max(0, s - 0.16));
+      const b = pos(e, s);
+      const alfa = limitar(Math.sin(Math.PI * Math.min(1, k * 1.15)) * (0.8 + 0.2 * Math.sin(s * 30 + e.fase)));
+      ctx.globalAlpha = alfa * 0.8;
+      ctx.strokeStyle = e.color;
+      ctx.lineWidth = 3.5 * (1 - 0.5 * k);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.globalAlpha = alfa;
+      ctx.fillStyle = e.color;
+      chispa(ctx, b.x, b.y, e.tam * (1 - 0.4 * k), s * 5 + e.fase);
+    }
+    ctx.globalAlpha = 1;
+  };
+}
 // ───────────────────────────── Registro ─────────────────────────────
 
 export const EFECTOS = {
@@ -654,6 +754,10 @@ export const EFECTOS = {
   destello: { duracion: 1.5, vibraciones: [{ t: 0, ms: 12 }], crear: crearDestello },
   medalla: { duracion: 2.7, tInsignia: 2.6, vibraciones: [{ t: 0.45, ms: 35 }], crear: crearMedalla },
   monedas: { duracion: 2.6, vibraciones: [{ t: 0.9, ms: 10 }, { t: 1.3, ms: 10 }, { t: 1.7, ms: 10 }], crear: crearMonedas },
+  // Una lluvia corta de monedas (10): el dinero empieza a fluir.
+  monedasPocas: { duracion: 2.3, vibraciones: [{ t: 0.8, ms: 10 }, { t: 1.3, ms: 10 }], crear: (escena, opciones) => crearMonedas(escena, { cantidad: 10, ...opciones }) },
+  cometa: { duracion: 2.1, vibraciones: [{ t: 0.2, ms: 12 }, { t: 1.05, ms: 25 }], crear: crearCometa },
+  estrellas: { duracion: 2.2, vibraciones: [{ t: 0, ms: 25 }, { t: 0.4, ms: 12 }], crear: crearEstrellas },
 };
 
 /** Junta varias animaciones en una: cada parte empieza tras su `desfase` (s) y usa sus `opciones`. */

@@ -263,6 +263,23 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     };
   }
 
+  /** Ver una celebración sin cambiar ningún dato: se reproduce sobre la primera tarjeta. */
+  function previsualizar(hito) {
+    const b = botones[0];
+    mostrarVista('contar');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      reproductor.reproducir(hito.efecto, {
+        titulo: hito.titulo,
+        subtitulo: `${b.nombre}: vista previa`,
+        animar: animar(),
+        vibrar: estado.preferencias.vibracion && entorno.vibracion ? (ms) => navigator.vibrate(ms) : null,
+        exclusivo: Boolean(hito.exclusivo),
+        escena: construirEscena(b.id, hito.porcentaje),
+        opciones: hito.opciones,
+      });
+    }));
+  }
+
   /** Muestra u oculta la medalla fija de una tarjeta (no la muestra mientras su medalla animada aún vuela). */
   function pintarMedalla(id, metal, conAnimacion = false) {
     const m = refs.tarjetas.get(id).medalla;
@@ -394,6 +411,11 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     caja.value = await archivo.text();
     aviso_('Archivo cargado. Pulsa «Importar» para aplicarlo.');
   });
+  const seccionAnimaciones = h('section', { class: 'seccion', 'aria-labelledby': 'aj-anim' },
+    h('h2', { id: 'aj-anim' }, 'Ver las animaciones'),
+    h('p', {}, 'Elige un porcentaje para ver esa celebración sobre la primera tarjeta. No cambia ningún dato.'),
+    h('div', { class: 'rejilla-hitos' }, hitos.map((x) => h('button', { class: 'boton boton--sec boton--chico', type: 'button', onclick: () => previsualizar(x) }, `${x.porcentaje} %`))));
+
   const seccionCopia = h('section', { class: 'seccion', 'aria-labelledby': 'aj-copia' },
     h('h2', { id: 'aj-copia' }, 'Copia de seguridad'),
     h('p', {}, 'Tus datos solo están en este dispositivo. Si borras los datos del navegador o desinstalas la app, se pierden. Guarda una copia de vez en cuando.'),
@@ -429,7 +451,7 @@ export function iniciar({ botones, hitos, app, almacen, reproductor, entorno }) 
     entorno.esIOS && !entorno.instalada ? h('p', {}, 'En iPhone: Safari → Compartir → «Añadir a pantalla de inicio».') : null,
     botonInstalar);
 
-  $('vista-ajustes').append(seccionTotal, seccionObjetivos, seccionPrefs, seccionCopia, seccionDatos, seccionAcerca);
+  $('vista-ajustes').append(seccionTotal, seccionObjetivos, seccionPrefs, ...(app.vistaPrevia ? [seccionAnimaciones] : []), seccionCopia, seccionDatos, seccionAcerca);
 
   // ───────────── Refrescar valores ─────────────
 
